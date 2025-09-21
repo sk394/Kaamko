@@ -2,7 +2,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Animated, PanResponder, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppColors } from '../theme/colors';
 
 interface AnimatedClockButtonProps {

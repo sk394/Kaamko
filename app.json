@@ -1,38 +1,37 @@
 {
   "expo": {
-    "name": "Kaamko App",
-    "slug": "kaamko-app",
+    "name": "react-native-time-tracker",
+    "slug": "react-native-time-tracker",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.reactnativetimetracker",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+    "updates": {
+      "fallbackToCacheTimeout": 0
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.reactnativetimetracker"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "extra": {
       "eas": {
-        "projectId": "d95c1f24-379e-476c-99ef-e3c077f897a6"
+        "projectId": "7a223af4-6e61-4b97-b90f-af7ccd34a5d3"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.iamsumankd.reactnativetimetracker",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     }
   }
