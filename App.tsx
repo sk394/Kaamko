@@ -26,6 +26,7 @@ import {
   loadStoredData,
   saveCurrentState,
   batchSaveClockOutData,
+  saveSession,
 } from './src/utils/storage';
 import { AppState, SessionObject} from './src/types';
 import { calculateHours } from './src/utils/timeUtils';
@@ -483,7 +484,10 @@ function AppContent() {
   const handleManualSessionAdd = useCallback(
     async (session: SessionObject) => {
       try {
-        // Add session to context and save to storage
+        // Save session to persistent storage first
+        await saveSession(session);
+        
+        // Add session to context (for immediate UI update)
         addSession(session);
 
         // Show success notification

@@ -1,41 +1,26 @@
 {
-
   "compilerOptions": {
-
     "jsx": "react-native",
-
     "target": "es2015",
-
-    "lib": ["dom", "dom.iterable", "es6"],
-
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es6"
+    ],
     "allowJs": true,
-
     "skipLibCheck": true,
-
     "esModuleInterop": true,
-
     "allowSyntheticDefaultImports": true,
-
     "strict": true,
-
     "forceConsistentCasingInFileNames": true,
-
-    "moduleResolution": "node",
-
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
-
     "isolatedModules": true,
-
     "noEmit": true
-
   },
-
   "include": [
-
     "**/*.ts",
-
     "**/*.tsx"
-
-  ]
-
+  ],
+  "extends": "expo/tsconfig.base"
 }
