@@ -2,19 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loadStoredSessions, getStorageKeys } from './storage';
 import { SessionObject } from '../types';
 
-/**
- * Debug utilities for testing storage functionality
- * Use these functions to troubleshoot storage issues
- */
-
-/**
- * Create test sessions for debugging
- */
 export const createTestSessions = (): SessionObject[] => {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split('T')[0];
+
   return [
     {
       id: 'test-session-1',
@@ -47,7 +41,7 @@ export const addTestSessions = async (): Promise<void> => {
   try {
     const { WORK_SESSIONS_KEY } = getStorageKeys();
     const testSessions = createTestSessions();
-    
+
     console.log('Adding test sessions:', testSessions);
     await AsyncStorage.setItem(WORK_SESSIONS_KEY, JSON.stringify(testSessions));
     console.log('Test sessions added successfully');
@@ -77,19 +71,19 @@ export const clearAllSessions = async (): Promise<void> => {
 export const inspectStorage = async (): Promise<void> => {
   try {
     console.log('=== STORAGE INSPECTION ===');
-    
+
     // Get all keys
     const allKeys = await AsyncStorage.getAllKeys();
     console.log('All AsyncStorage keys:', allKeys);
-    
+
     // Get storage keys
     const { WORK_SESSIONS_KEY, CLOCK_STATE_KEY } = getStorageKeys();
     console.log('Expected keys:', { WORK_SESSIONS_KEY, CLOCK_STATE_KEY });
-    
+
     // Check sessions
     const sessionsData = await AsyncStorage.getItem(WORK_SESSIONS_KEY);
     console.log('Raw sessions data:', sessionsData);
-    
+
     if (sessionsData) {
       try {
         const parsedSessions = JSON.parse(sessionsData);
@@ -99,11 +93,11 @@ export const inspectStorage = async (): Promise<void> => {
         console.error('Failed to parse sessions data:', parseError);
       }
     }
-    
+
     // Check clock state
     const clockData = await AsyncStorage.getItem(CLOCK_STATE_KEY);
     console.log('Raw clock data:', clockData);
-    
+
     if (clockData) {
       try {
         const parsedClock = JSON.parse(clockData);
@@ -112,7 +106,7 @@ export const inspectStorage = async (): Promise<void> => {
         console.error('Failed to parse clock data:', parseError);
       }
     }
-    
+
     console.log('=== END INSPECTION ===');
   } catch (error) {
     console.error('Storage inspection failed:', error);
@@ -141,31 +135,30 @@ export const testLoadStoredSessions = async (): Promise<SessionObject[]> => {
 export const runCompleteDebugTest = async (): Promise<void> => {
   try {
     console.log('🔍 Starting complete debug test...');
-    
+
     // Step 1: Inspect current storage
     console.log('\n1. Inspecting current storage...');
     await inspectStorage();
-    
+
     // Step 2: Test loading current sessions
     console.log('\n2. Testing current session loading...');
     const currentSessions = await testLoadStoredSessions();
-    
+
     // Step 3: Add test sessions
     console.log('\n3. Adding test sessions...');
     await addTestSessions();
-    
+
     // Step 4: Test loading after adding test sessions
     console.log('\n4. Testing session loading after adding test data...');
     const newSessions = await testLoadStoredSessions();
-    
+
     // Step 5: Final inspection
     console.log('\n5. Final storage inspection...');
     await inspectStorage();
-    
+
     console.log('\n✅ Complete debug test finished!');
     console.log(`Original sessions: ${currentSessions.length}`);
     console.log(`Sessions after test: ${newSessions.length}`);
-    
   } catch (error) {
     console.error('❌ Complete debug test failed:', error);
     throw error;
@@ -186,7 +179,7 @@ export const quickDebug = async (): Promise<{
     const allKeys = await AsyncStorage.getAllKeys();
     const hasSessionsKey = allKeys.includes(WORK_SESSIONS_KEY);
     const rawData = await AsyncStorage.getItem(WORK_SESSIONS_KEY);
-    
+
     let sessionsCount = 0;
     if (rawData) {
       try {
@@ -196,7 +189,7 @@ export const quickDebug = async (): Promise<{
         // Ignore parse errors for this quick check
       }
     }
-    
+
     return {
       hasSessionsKey,
       sessionsCount,

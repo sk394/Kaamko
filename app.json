@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "react-native-time-tracker",
-    "slug": "react-native-time-tracker",
+    "name": "Kaamko App",
+    "slug": "kaamko-app",
+    "description": "Work Smarter, Track Better - A simple and elegant time tracking application",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
     "platforms": [
@@ -10,12 +11,12 @@
       "web"
     ],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/time.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/time.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFBFE"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -29,10 +30,26 @@
       }
     },
     "ios": {
-      "bundleIdentifier": "com.iamsumankd.reactnativetimetracker",
+      "bundleIdentifier": "com.iamsumankd.kaamkoapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
-    }
+      },
+      "supportsTablet": true,
+      "requireFullScreen": false
+    },
+    "android": {
+      "package": "com.iamsumankd.kaamkoapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/time.png",
+        "backgroundColor": "#FFFBFE"
+      },
+      "permissions": [],
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/time.png"
+    },
+    "privacy": "public",
+    "githubUrl": "https://github.com/sk394/Kaamko"
   }
 }

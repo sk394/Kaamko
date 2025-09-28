@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Animated } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Animated,
+  Dimensions,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import {
   PaperProvider,
   Text,
@@ -13,6 +20,8 @@ import { AppColors } from './src/theme/colors';
 import { AnimatedClockButton } from './src/components/AnimatedClockButton';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import SessionsHistoryScreen from './src/components/SessionsHistoryScreen';
+import SettingsPage from './src/components/SettingsPage';
+import { SessionDialog } from './src/components';
 import {
   loadStoredData,
   saveCurrentState,
@@ -20,20 +29,153 @@ import {
 } from './src/utils/storage';
 import { AppState, SessionObject, NavigationMethods } from './src/types';
 import { calculateHours } from './src/utils/timeUtils';
-import { SessionsProvider, useSessionsContext } from './src/contexts/SessionsContext';
+import {
+  SessionsProvider,
+  useSessionsContext,
+} from './src/contexts/SessionsContext';
 import AnalogClock from './src/components/AnalogClock';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 
-/**
- * Main application content component
- * Handles all time tracking functionality including:
- * - Clock in/out operations
- * - Session history management
- * - Data persistence with AsyncStorage
- * - Error handling and user feedback
- */
+const { width } = Dimensions.get('window');
+
+const MAIN_TABS = [
+  { id: 'home', icon: 'home-outline', activeIcon: 'home', label: 'Home' },
+  { id: 'history', icon: 'time-outline', activeIcon: 'time', label: 'History' },
+  {
+    id: 'settings',
+    icon: 'settings-outline',
+    activeIcon: 'settings',
+    label: 'Settings',
+  },
+];
+
+const ADD_TAB = {
+  id: 'add',
+  icon: 'add-circle-outline',
+  activeIcon: 'add-circle',
+  label: 'Clock',
+};
+
+const MAIN_TAB_WIDTH = ((width - 32) * 0.6) / MAIN_TABS.length; // 60% of total width for main tabs
+const ADD_BUTTON_SIZE = 60; // Size of the circular add button
+
+interface TabButtonProps {
+  tab: (typeof MAIN_TABS)[0];
+  index: number;
+  activeTab: string;
+  onTabPress: (tabId: string) => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = React.memo(
+  ({ tab, index, activeTab, onTabPress }) => {
+    const isActive = tab.id === activeTab;
+    const [isPressed, setIsPressed] = useState(false);
+
+    const handlePress = useCallback(() => {
+      setIsPressed(true);
+      setTimeout(() => setIsPressed(false), 150);
+      onTabPress(tab.id);
+    }, [onTabPress, tab.id]);
+
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        style={[
+          styles.tab,
+          {
+            opacity: isActive ? 1 : 0.6,
+            transform: [{ scale: isPressed ? 0.95 : isActive ? 1.1 : 1 }],
+          },
+        ]}>
+        <Ionicons
+          name={isActive ? tab.activeIcon : (tab.icon as any)}
+          size={24}
+          color={isActive ? '#FFFFFF' : 'rgba(255,255,255,0.6)'}
+        />
+      </TouchableOpacity>
+    );
+  }
+);
+
+TabButton.displayName = 'TabButton';
+
+interface BottomTabProps {
+  activeTab: string;
+  onTabPress: (tabId: string) => void;
+}
+
+const BottomTab: React.FC<BottomTabProps> = ({
+  activeTab = 'main',
+  onTabPress,
+}) => {
+  const getIndicatorPosition = () => {
+    const activeIndex = MAIN_TABS.findIndex((tab) => tab.id === activeTab);
+    return activeIndex !== -1 ? activeIndex * MAIN_TAB_WIDTH : 0;
+  };
+
+  const handleAddPress = useCallback(() => {
+    onTabPress(ADD_TAB.id);
+  }, [onTabPress]);
+
+  return (
+    <View style={styles.bottomContainer}>
+      {/* Main tabs container on the left */}
+      <View style={styles.mainTabsWrapper}>
+        <BlurView style={styles.absolute} tint="dark" intensity={20} />
+        <View style={styles.mainTabsContainer}>
+          <View
+            style={[
+              styles.indicator,
+              {
+                transform: [{ translateX: getIndicatorPosition() }],
+              },
+            ]}
+          />
+          {MAIN_TABS.map((tab, index) => (
+            <TabButton
+              key={tab.id}
+              tab={tab}
+              index={index}
+              activeTab={activeTab}
+              onTabPress={onTabPress}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Separate circular add button on the right */}
+      <TouchableOpacity
+        onPress={handleAddPress}
+        style={[
+          styles.addButton,
+          {
+            backgroundColor:
+              activeTab === ADD_TAB.id
+                ? 'rgba(255,255,255,0.25)'
+                : 'rgba(255,255,255,0.15)',
+          },
+        ]}>
+        <BlurView style={styles.addButtonBlur} tint="dark" intensity={20} />
+        <Ionicons
+          name={
+            activeTab === ADD_TAB.id
+              ? ADD_TAB.activeIcon
+              : (ADD_TAB.icon as any)
+          }
+          size={28}
+          color={activeTab === ADD_TAB.id ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 function AppContent() {
   // Local state for clocked in/out and navigation only
-  const [state, setState] = useState<Pick<AppState, 'isClocked' | 'clockInTime' | 'loading' | 'navigation'>>({
+  const [state, setState] = useState<
+    Pick<AppState, 'isClocked' | 'clockInTime' | 'loading' | 'navigation'>
+  >({
     isClocked: false,
     clockInTime: null,
     loading: true,
@@ -41,6 +183,13 @@ function AppContent() {
       currentScreen: 'main',
     },
   });
+
+  // Bottom tab navigation state
+  const [activeTab, setActiveTab] = useState<string>('home');
+
+  // Manual session dialog state
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
+
   // Use sessions context for session management
   const { sessions, addSession, refreshSessions } = useSessionsContext();
 
@@ -73,15 +222,8 @@ function AppContent() {
     []
   );
 
-  /**
-   * Initialize the application by loading saved data from AsyncStorage
-   * This function runs on app startup to restore previous state
-   * Includes error handling to ensure app works even if storage fails
-   */
   const initializeApp = async () => {
     try {
-      // Add a minimum loading time to show the loading state for better UX
-      // This prevents the loading screen from flashing too quickly
       const [dataResult] = await Promise.all([
         loadStoredData(),
         new Promise((resolve) => setTimeout(resolve, 800)), // Minimum 800ms loading
@@ -89,8 +231,6 @@ function AppContent() {
 
       const { clockState, sessions } = dataResult;
 
-      // Update app state with loaded data
-      // Convert clockInTime from string to Date object for internal use
       setState({
         isClocked: clockState.isClocked,
         clockInTime: clockState.clockInTime
@@ -112,8 +252,6 @@ function AppContent() {
         'error'
       );
 
-      // Set default state on error - app continues to function
-      // This ensures the app is usable even if storage is corrupted
       setState({
         isClocked: false,
         clockInTime: null,
@@ -125,12 +263,6 @@ function AppContent() {
     }
   };
 
-  /**
-   * Handle clock-in functionality
-   * Records the current timestamp and saves state to AsyncStorage
-   * Includes loading states and error handling for better UX
-   * Memoized to prevent unnecessary re-renders of child components
-   */
   const handleClockIn = useCallback(async () => {
     try {
       const clockInTime = new Date();
@@ -185,9 +317,6 @@ function AppContent() {
 
   /**
    * Handle clock-out functionality
-   * Calculates hours worked, creates session record, and saves to AsyncStorage
-   * Uses batch operations for better performance and data consistency
-   * Memoized to prevent unnecessary re-renders of child components
    */
   const handleClockOut = useCallback(async () => {
     // Validate that user is currently clocked in
@@ -200,20 +329,20 @@ function AppContent() {
       const clockOutTime = new Date();
 
       // Calculate hours worked for the session using utility function
-      // This handles time differences including overnight sessions
       const hours = calculateHours(
         state.clockInTime.toISOString(),
         clockOutTime.toISOString()
       );
 
       // Create session object with all required data
-      // ID uses timestamp for uniqueness, date in YYYY-MM-DD format
       const session: SessionObject = {
         id: `session-${Date.now()}`,
         // Save date in local time (YYYY-MM-DD)
         date:
-          clockOutTime.getFullYear() + '-' +
-          String(clockOutTime.getMonth() + 1).padStart(2, '0') + '-' +
+          clockOutTime.getFullYear() +
+          '-' +
+          String(clockOutTime.getMonth() + 1).padStart(2, '0') +
+          '-' +
           String(clockOutTime.getDate()).padStart(2, '0'),
         clockIn: state.clockInTime.toISOString(),
         clockOut: clockOutTime.toISOString(),
@@ -226,19 +355,15 @@ function AppContent() {
         loading: true,
       }));
 
-      // Add a small delay to show loading state for better UX
-      // Longer delay for clock-out as it involves more processing
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Use batch operation for better performance - saves both session and clock state atomically
-      // This prevents data inconsistency if one operation fails
       await batchSaveClockOutData(
         { isClocked: false, clockInTime: null },
         session
       );
 
       // Update UI - reset clock state and add session to history
-      // Session is added to beginning of array (most recent first)
       setState((prevState) => ({
         ...prevState,
         isClocked: false,
@@ -271,79 +396,115 @@ function AppContent() {
     }
   }, [state.isClocked, state.clockInTime, showNotification]);
 
-  /**
-   * Animate screen transition
-   * Requirement 6.3: Add smooth transitions between screens
-   */
-  const animateScreenTransition = useCallback((callback: () => void) => {
-    if (isTransitioning) return; // Prevent multiple simultaneous transitions
+  const animateScreenTransition = useCallback(
+    (callback: () => void) => {
+      if (isTransitioning) return; // Prevent multiple simultaneous transitions
 
-    setIsTransitioning(true);
+      setIsTransitioning(true);
 
-    Animated.sequence([
-      // Fade out current screen
-      Animated.timing(screenTransition, {
-        toValue: 0.3,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      // Change screen (callback)
-      Animated.timing(screenTransition, {
-        toValue: 0.3,
-        duration: 0,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Execute the navigation change
-      callback();
+      Animated.sequence([
+        // Fade out current screen
+        Animated.timing(screenTransition, {
+          toValue: 0.3,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        // Change screen (callback)
+        Animated.timing(screenTransition, {
+          toValue: 0.3,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Execute the navigation change
+        callback();
 
-      // Fade in new screen
-      Animated.timing(screenTransition, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsTransitioning(false);
+        // Fade in new screen
+        Animated.timing(screenTransition, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsTransitioning(false);
+        });
       });
-    });
-  }, [screenTransition, isTransitioning]);
+    },
+    [screenTransition, isTransitioning]
+  );
 
-  /**
-   * Navigation methods for screen switching with smooth transitions
-   * These methods handle transitions between main screen and sessions history
-   * Memoized to prevent unnecessary re-renders of child components
-   */
-  const navigationMethods: NavigationMethods = {
-    /**
-     * Navigate to sessions history screen with smooth transition
-     * Updates navigation state to show sessions history page
-     */
-    navigateToSessionsHistory: useCallback(() => {
-      animateScreenTransition(() => {
-        setState((prevState) => ({
-          ...prevState,
-          navigation: {
-            currentScreen: 'sessionsHistory',
-          },
-        }));
-      });
-    }, [animateScreenTransition]),
+  const handleTabPress = useCallback(
+    (tabId: string) => {
+      setActiveTab(tabId);
 
-    /**
-     * Navigate back to main screen with smooth transition
-     * Updates navigation state to show main time tracking page
-     */
-    navigateToMain: useCallback(() => {
-      animateScreenTransition(() => {
-        setState((prevState) => ({
-          ...prevState,
-          navigation: {
-            currentScreen: 'main',
-          },
-        }));
-      });
-    }, [animateScreenTransition]),
-  };
+      // Map tab IDs to screen navigation
+      switch (tabId) {
+        case 'home':
+        case 'clock':
+          animateScreenTransition(() => {
+            setState((prevState) => ({
+              ...prevState,
+              navigation: {
+                currentScreen: 'main',
+              },
+            }));
+          });
+          break;
+        case 'history':
+          animateScreenTransition(() => {
+            setState((prevState) => ({
+              ...prevState,
+              navigation: {
+                currentScreen: 'sessionsHistory',
+              },
+            }));
+          });
+          break;
+        case 'add':
+          // Show manual session dialog
+          setShowSessionDialog(true);
+          break;
+        case 'settings':
+          animateScreenTransition(() => {
+            setState((prevState) => ({
+              ...prevState,
+              navigation: {
+                currentScreen: 'settings',
+              },
+            }));
+          });
+          break;
+        default:
+          break;
+      }
+    },
+    [animateScreenTransition, showNotification]
+  );
+
+  const handleManualSessionAdd = useCallback(
+    async (session: SessionObject) => {
+      try {
+        // Add session to context and save to storage
+        addSession(session);
+
+        // Show success notification
+        showNotification(
+          `Manual session added! Worked ${session.hours.toFixed(2)} hours.`,
+          'success'
+        );
+      } catch (error) {
+        console.error('Failed to add manual session:', error);
+        showNotification(
+          'Failed to save manual session. Please try again.',
+          'error'
+        );
+      }
+    },
+    [addSession, showNotification]
+  );
+
+  const handleSessionDialogDismiss = useCallback(() => {
+    setShowSessionDialog(false);
+  }, []);
 
   if (state.loading) {
     return (
@@ -367,45 +528,38 @@ function AppContent() {
   const renderCurrentScreen = () => {
     switch (state.navigation.currentScreen) {
       case 'sessionsHistory':
-        return (
-          <SessionsHistoryScreen
-            onNavigateBack={navigationMethods.navigateToMain}
-          />
-        );
+        return <SessionsHistoryScreen />;
+      case 'settings':
+        return <SettingsPage />;
       case 'main':
       default:
         return (
           <View style={styles.mainContainer}>
-            {/* Blurred header background */}
-            <View style={[styles.headerBlurWrapper, styles.centered]} pointerEvents="none">
+            <View
+              style={[styles.headerBlurWrapper, styles.centered]}
+              pointerEvents="none">
               <Text style={styles.headerBlurText}>Kaamko App</Text>
-            </View>
-            {/* Navigation button at top right */}
-            <View style={styles.navButtonWrapper}>
-              <Text
-                style={styles.navButton}
-                onPress={navigationMethods.navigateToSessionsHistory}
-              >
-                Session History
-                {' →'}
+              <Text style={styles.headerSloganText}>
+                Work Smarter, Track Better
               </Text>
             </View>
+
             {/* Show AnalogClock and working-since text when clocked in */}
             {state.isClocked && state.clockInTime ? (
               <View style={styles.clockedInContainer}>
                 <AnalogClock clockInTime={state.clockInTime} />
                 <Text style={styles.workingSinceText}>
-                  You have been working since {state.clockInTime ? new Date(state.clockInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  You have been working since{' '}
+                  {state.clockInTime
+                    ? new Date(state.clockInTime).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    : ''}
                 </Text>
-                {/* Swipe to unlock style for clock out */}
                 <View style={styles.swipeDownWrapper}>
-                  <Button
-                    style={styles.swipeDownIcon}
-                    onPress={handleClockOut}
-                  >
-                    <Text style={styles.swipeDownText}>
-                      Clock Out
-                    </Text>
+                  <Button style={styles.swipeDownIcon} onPress={handleClockOut}>
+                    <Text style={styles.swipeDownText}>Clock Out</Text>
                   </Button>
                 </View>
               </View>
@@ -420,14 +574,12 @@ function AppContent() {
           </View>
         );
     }
-  }
+  };
 
   return (
     <PaperProvider theme={MD3LightTheme}>
       <View style={styles.container}>
         <StatusBar style="auto" />
-
-        {/* Animated container for smooth screen transitions */}
         <Animated.View
           style={[
             styles.screenContainer,
@@ -443,9 +595,7 @@ function AppContent() {
                 },
               ],
             },
-          ]}
-        >
-          {/* Render current screen based on navigation state */}
+          ]}>
           {renderCurrentScreen()}
         </Animated.View>
 
@@ -464,6 +614,16 @@ function AppContent() {
           }}>
           {notificationMessage}
         </Snackbar>
+
+        {/* Manual Session Dialog */}
+        <SessionDialog
+          visible={showSessionDialog}
+          onDismiss={handleSessionDialogDismiss}
+          onAddSession={handleManualSessionAdd}
+        />
+
+        {/* Bottom Tab Navigation */}
+        <BottomTab activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
     </PaperProvider>
   );
@@ -471,8 +631,6 @@ function AppContent() {
 
 /**
  * Main App component with error boundary
- * Wraps the main application content in an error boundary to catch
- * and handle any unhandled errors gracefully
  */
 export default function App() {
   return (
@@ -487,7 +645,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a"
+    backgroundColor: '#0f172a',
   },
   centered: {
     alignItems: 'center',
@@ -498,6 +656,7 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
+    paddingBottom: 100, // Add space for bottom tab
   },
   headerBlurWrapper: {
     position: 'absolute',
@@ -515,6 +674,15 @@ const styles = StyleSheet.create({
     opacity: 0.15,
     letterSpacing: 2,
     textAlign: 'center',
+  },
+  headerSloganText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: AppColors.primary,
+    opacity: 0.25,
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginTop: 8,
   },
   navButtonWrapper: {
     position: 'absolute',
@@ -594,7 +762,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   snackbar: {
-    marginBottom: 16,
+    marginBottom: 100, // Position above bottom tab (reduced since tabs are smaller)
     marginHorizontal: 16,
     borderRadius: 8,
   },
@@ -602,6 +770,97 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.errorContainer,
   },
   successSnackbar: {
-    backgroundColor: "#34d399",
+    backgroundColor: '#34d399',
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 34 : 24,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mainTabsWrapper: {
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    width: (width - 32) * 0.6, // 60% of available width
+  },
+  absolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  mainTabsContainer: {
+    flexDirection: 'row',
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 30,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+  },
+  indicator: {
+    position: 'absolute',
+    width: MAIN_TAB_WIDTH - 12,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    left: 6,
+    top: 10, // Center vertically (60-40)/2 = 10
+    shadowColor: '#fff',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
+  addButton: {
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
+    borderRadius: ADD_BUTTON_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  addButtonBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  icon: {
+    // Remove invalid text properties for icon
   },
 });

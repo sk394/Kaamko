@@ -1,5 +1,9 @@
 import { SessionObject, FilterType, SessionFilter } from '../types';
-import { getLastWeekDateRange, getLastMonthDateRange, isDateInRange } from './timeUtils';
+import {
+  getLastWeekDateRange,
+  getLastMonthDateRange,
+  isDateInRange,
+} from './timeUtils';
 
 /**
  * Available filter options for sessions
@@ -45,7 +49,7 @@ export const filterSessions = (
     return sessions;
   }
 
-  return sessions.filter(session =>
+  return sessions.filter((session) =>
     isDateInRange(session.date, filter.startDate!, filter.endDate!)
   );
 };

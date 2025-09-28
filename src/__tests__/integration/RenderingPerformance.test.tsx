@@ -17,27 +17,30 @@ const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const generateRealisticSessions = (count: number): SessionObject[] => {
   const sessions: SessionObject[] = [];
   const today = new Date();
-  
+
   for (let i = 0; i < count; i++) {
     const sessionDate = new Date(today);
     sessionDate.setDate(today.getDate() - Math.floor(i / 2)); // Some sessions on same day
-    
+
     // Vary clock-in times
     const clockInHour = 8 + (i % 3); // 8, 9, or 10 AM
     const clockInMinute = (i % 4) * 15; // 0, 15, 30, or 45 minutes
-    
+
     const clockIn = new Date(sessionDate);
     clockIn.setHours(clockInHour, clockInMinute, 0, 0);
-    
+
     // Vary session lengths
     const sessionHours = 7 + (i % 3); // 7, 8, or 9 hours
     const sessionMinutes = (i % 4) * 15; // 0, 15, 30, or 45 minutes
-    
+
     const clockOut = new Date(clockIn);
-    clockOut.setHours(clockIn.getHours() + sessionHours, clockIn.getMinutes() + sessionMinutes);
-    
+    clockOut.setHours(
+      clockIn.getHours() + sessionHours,
+      clockIn.getMinutes() + sessionMinutes
+    );
+
     const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-    
+
     sessions.push({
       id: `session-${String(i + 1).padStart(4, '0')}`, // Consistent ID format
       date: sessionDate.toISOString().split('T')[0],
@@ -46,7 +49,7 @@ const generateRealisticSessions = (count: number): SessionObject[] => {
       hours: Math.round(hours * 100) / 100, // Round to 2 decimal places
     });
   }
-  
+
   return sessions;
 };
 
@@ -64,7 +67,7 @@ describe('Rendering Performance Integration Tests', () => {
   describe('Large Session List Rendering', () => {
     it('should render 100 sessions efficiently', async () => {
       const mockSessions = generateRealisticSessions(100);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -73,15 +76,15 @@ describe('Rendering Performance Integration Tests', () => {
       });
 
       const startTime = performance.now();
-      
+
       const { getByText, queryByText } = render(<App />);
 
       await waitFor(() => {
         expect(queryByText('Loading your data...')).toBeNull();
       });
-      
+
       const loadTime = performance.now() - startTime;
-      
+
       // App should load within reasonable time even with 100 sessions
       expect(loadTime).toBeLessThan(2000);
 
@@ -90,23 +93,23 @@ describe('Rendering Performance Integration Tests', () => {
 
       // Navigate to sessions history
       const navigationStartTime = performance.now();
-      
+
       fireEvent.press(getByText('View History'));
 
       await waitFor(() => {
         expect(getByText('Sessions History')).toBeTruthy();
         expect(getByText('Showing 100 of 100 sessions')).toBeTruthy();
       });
-      
+
       const navigationTime = performance.now() - navigationStartTime;
-      
+
       // Navigation should be fast even with large dataset
       expect(navigationTime).toBeLessThan(1000);
     });
 
     it('should handle 500 sessions without performance degradation', async () => {
       const mockSessions = generateRealisticSessions(500);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -115,15 +118,15 @@ describe('Rendering Performance Integration Tests', () => {
       });
 
       const startTime = performance.now();
-      
+
       const { getByText, queryByText } = render(<App />);
 
       await waitFor(() => {
         expect(queryByText('Loading your data...')).toBeNull();
       });
-      
+
       const loadTime = performance.now() - startTime;
-      
+
       // Should still load within reasonable time
       expect(loadTime).toBeLessThan(3000);
 
@@ -137,22 +140,24 @@ describe('Rendering Performance Integration Tests', () => {
 
       // Test filtering performance with large dataset
       const filterStartTime = performance.now();
-      
+
       fireEvent.press(getByText('Last Week'));
-      
+
       await waitFor(() => {
-        expect(getByText(/Showing \d+ of 500 sessions \(Last Week\)/)).toBeTruthy();
+        expect(
+          getByText(/Showing \d+ of 500 sessions \(Last Week\)/)
+        ).toBeTruthy();
       });
-      
+
       const filterTime = performance.now() - filterStartTime;
-      
+
       // Filtering should still be responsive
       expect(filterTime).toBeLessThan(1000);
     });
 
     it('should maintain responsiveness with 1000 sessions', async () => {
       const mockSessions = generateRealisticSessions(1000);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -162,9 +167,12 @@ describe('Rendering Performance Integration Tests', () => {
 
       const { getByText, queryByText } = render(<App />);
 
-      await waitFor(() => {
-        expect(queryByText('Loading your data...')).toBeNull();
-      }, { timeout: 5000 });
+      await waitFor(
+        () => {
+          expect(queryByText('Loading your data...')).toBeNull();
+        },
+        { timeout: 5000 }
+      );
 
       // Should still be functional
       expect(getByText('Time Tracker')).toBeTruthy();
@@ -173,20 +181,26 @@ describe('Rendering Performance Integration Tests', () => {
       // Navigate to sessions history
       fireEvent.press(getByText('View History'));
 
-      await waitFor(() => {
-        expect(getByText('Sessions History')).toBeTruthy();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(getByText('Sessions History')).toBeTruthy();
+        },
+        { timeout: 3000 }
+      );
 
       // Test that filtering still works
       fireEvent.press(getByText('Last Month'));
-      
-      await waitFor(() => {
-        expect(getByText(/Showing \d+ of 1000 sessions/)).toBeTruthy();
-      }, { timeout: 2000 });
+
+      await waitFor(
+        () => {
+          expect(getByText(/Showing \d+ of 1000 sessions/)).toBeTruthy();
+        },
+        { timeout: 2000 }
+      );
 
       // Test navigation back
       fireEvent.press(getByText('Back to Main'));
-      
+
       await waitFor(() => {
         expect(getByText('Time Tracker')).toBeTruthy();
       });
@@ -196,7 +210,7 @@ describe('Rendering Performance Integration Tests', () => {
   describe('Memory Usage Optimization', () => {
     it('should handle repeated navigation without memory leaks', async () => {
       const mockSessions = generateRealisticSessions(200);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -214,7 +228,7 @@ describe('Rendering Performance Integration Tests', () => {
       for (let i = 0; i < 10; i++) {
         // Navigate to sessions history
         fireEvent.press(getByText('View History'));
-        
+
         await waitFor(() => {
           expect(getByText('Sessions History')).toBeTruthy();
         });
@@ -237,7 +251,7 @@ describe('Rendering Performance Integration Tests', () => {
 
         // Navigate back
         fireEvent.press(getByText('Back to Main'));
-        
+
         await waitFor(() => {
           expect(getByText('Time Tracker')).toBeTruthy();
         });
@@ -250,7 +264,7 @@ describe('Rendering Performance Integration Tests', () => {
 
     it('should efficiently handle session data updates', async () => {
       const initialSessions = generateRealisticSessions(50);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(initialSessions));
@@ -272,15 +286,15 @@ describe('Rendering Performance Integration Tests', () => {
       });
 
       const clockOutStartTime = performance.now();
-      
+
       fireEvent.press(getByText('Clock Out'));
 
       await waitFor(() => {
         expect(getByText('Not Clocked In')).toBeTruthy();
       });
-      
+
       const clockOutTime = performance.now() - clockOutStartTime;
-      
+
       // Clock out should be fast even with existing sessions
       expect(clockOutTime).toBeLessThan(1000);
 
@@ -297,7 +311,7 @@ describe('Rendering Performance Integration Tests', () => {
   describe('Scroll Performance', () => {
     it('should handle scrolling through large session lists efficiently', async () => {
       const mockSessions = generateRealisticSessions(300);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -321,14 +335,16 @@ describe('Rendering Performance Integration Tests', () => {
 
       // The sessions should be displayed (we can't easily test scrolling in unit tests,
       // but we can verify the list is rendered)
-      expect(getByText('Filtered sessions list will be displayed here')).toBeTruthy();
+      expect(
+        getByText('Filtered sessions list will be displayed here')
+      ).toBeTruthy();
     });
   });
 
   describe('Concurrent Operations Performance', () => {
     it('should handle filtering while loading new sessions', async () => {
       const mockSessions = generateRealisticSessions(100);
-      
+
       // Mock slower storage operations
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
@@ -354,13 +370,14 @@ describe('Rendering Performance Integration Tests', () => {
 
       // Rapid filter changes
       const filters = ['Last Week', 'Last Month', 'All'];
-      
+
       for (let i = 0; i < 5; i++) {
         for (const filter of filters) {
           fireEvent.press(getByText(filter));
-          
+
           // Don't wait for each filter to complete, test rapid switching
-          if (i === 4) { // Only wait on the last iteration
+          if (i === 4) {
+            // Only wait on the last iteration
             await waitFor(() => {
               expect(getByText(/Showing \d+ of 100 sessions/)).toBeTruthy();
             });
@@ -374,7 +391,7 @@ describe('Rendering Performance Integration Tests', () => {
 
     it('should handle navigation during active filtering', async () => {
       const mockSessions = generateRealisticSessions(150);
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -414,7 +431,7 @@ describe('Rendering Performance Integration Tests', () => {
 
       // Should still be functional
       fireEvent.press(getByText('All'));
-      
+
       await waitFor(() => {
         expect(getByText('Showing 150 of 150 sessions')).toBeTruthy();
       });
@@ -435,7 +452,7 @@ describe('Rendering Performance Integration Tests', () => {
           hours: 0.0003, // Very small hours value
         },
       ];
-      
+
       mockAsyncStorage.getItem.mockImplementation((key) => {
         if (key === 'WORK_SESSIONS') {
           return Promise.resolve(JSON.stringify(mockSessions));
@@ -462,7 +479,7 @@ describe('Rendering Performance Integration Tests', () => {
 
       // Test filtering with edge case data
       fireEvent.press(getByText('Last Month'));
-      
+
       await waitFor(() => {
         expect(getByText(/Showing \d+ of 51 sessions/)).toBeTruthy();
       });

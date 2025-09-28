@@ -19,7 +19,10 @@ describe('FilterControls', () => {
   it('renders all filter options correctly', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="all" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="all"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
@@ -32,12 +35,15 @@ describe('FilterControls', () => {
   it('highlights the active filter button', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="lastWeek" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="lastWeek"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
     const lastWeekButton = getByText('Last Week');
-    
+
     // Check that the button exists and is rendered
     expect(lastWeekButton).toBeTruthy();
   });
@@ -45,7 +51,10 @@ describe('FilterControls', () => {
   it('calls onFilterChange when a filter button is pressed', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="all" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="all"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
@@ -59,7 +68,10 @@ describe('FilterControls', () => {
   it('has proper accessibility attributes', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="all" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="all"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
@@ -67,7 +79,7 @@ describe('FilterControls', () => {
 
     // Check that the button exists and can be interacted with
     expect(allButton).toBeTruthy();
-    
+
     // Test that the button is pressable
     fireEvent.press(allButton);
     expect(mockOnFilterChange).toHaveBeenCalledWith('all');
@@ -79,15 +91,22 @@ describe('FilterControls', () => {
     filterTypes.forEach((activeFilter) => {
       const { getByText } = render(
         <TestWrapper>
-          <FilterControls activeFilter={activeFilter} onFilterChange={mockOnFilterChange} />
+          <FilterControls
+            activeFilter={activeFilter}
+            onFilterChange={mockOnFilterChange}
+          />
         </TestWrapper>
       );
 
       // Find the active button and verify it exists
-      const activeButtonText = activeFilter === 'all' ? 'All' : 
-                              activeFilter === 'lastWeek' ? 'Last Week' : 'Last Month';
+      const activeButtonText =
+        activeFilter === 'all'
+          ? 'All'
+          : activeFilter === 'lastWeek'
+            ? 'Last Week'
+            : 'Last Month';
       const activeButton = getByText(activeButtonText);
-      
+
       expect(activeButton).toBeTruthy();
 
       // Verify all buttons exist
@@ -100,14 +119,17 @@ describe('FilterControls', () => {
   it('maintains proper touch targets for accessibility', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="all" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="all"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
     // Verify buttons are pressable (this tests the Pressable component is working)
     const allButton = getByText('All');
     expect(allButton.parent?.parent).toBeTruthy();
-    
+
     // Test that pressing works (already tested above, but this confirms touch targets)
     fireEvent.press(allButton);
     expect(mockOnFilterChange).toHaveBeenCalledWith('all');
@@ -116,11 +138,14 @@ describe('FilterControls', () => {
   it('does not highlight any buttons when filter is "all" (default state)', () => {
     const { getByText } = render(
       <TestWrapper>
-        <FilterControls activeFilter="all" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="all"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
-    // Requirement 4.3: When no filters are active (activeFilter === 'all'), 
+    // Requirement 4.3: When no filters are active (activeFilter === 'all'),
     // no filter buttons should be highlighted
     const allButton = getByText('All');
     const lastWeekButton = getByText('Last Week');
@@ -139,7 +164,10 @@ describe('FilterControls', () => {
   it('highlights only the active filter button when not in default state', () => {
     const { getByText, rerender } = render(
       <TestWrapper>
-        <FilterControls activeFilter="lastWeek" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="lastWeek"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 
@@ -150,7 +178,10 @@ describe('FilterControls', () => {
     // Test with lastMonth filter
     rerender(
       <TestWrapper>
-        <FilterControls activeFilter="lastMonth" onFilterChange={mockOnFilterChange} />
+        <FilterControls
+          activeFilter="lastMonth"
+          onFilterChange={mockOnFilterChange}
+        />
       </TestWrapper>
     );
 

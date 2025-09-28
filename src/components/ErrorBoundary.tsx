@@ -40,8 +40,8 @@ export class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </Text>
             <Text variant="bodyLarge" style={styles.message}>
-              The app encountered an unexpected error. Don&apost worry, your data is
-              safe.
+              The app encountered an unexpected error. Don&apost worry, your
+              data is safe.
             </Text>
             <Text variant="bodyMedium" style={styles.details}>
               {this.state.error?.message || 'Unknown error occurred'}

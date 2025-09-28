@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert } from 'react-native';
-import { 
-  addTestSessions, 
-  clearAllSessions, 
-  inspectStorage, 
+import {
+  addTestSessions,
+  clearAllSessions,
+  inspectStorage,
   testLoadStoredSessions,
   runCompleteDebugTest,
-  quickDebug 
+  quickDebug,
 } from '../utils/debugStorage';
 
-/**
- * Storage Debugger Component
- * Add this to your App.tsx temporarily to debug storage issues
- */
 const StorageDebugger: React.FC = () => {
   const [debugResult, setDebugResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -64,7 +60,9 @@ const StorageDebugger: React.FC = () => {
     try {
       setLoading(true);
       const sessions = await testLoadStoredSessions();
-      setDebugResult(`✅ Loaded ${sessions.length} sessions (check console for details)`);
+      setDebugResult(
+        `✅ Loaded ${sessions.length} sessions (check console for details)`
+      );
     } catch (error) {
       const message = `❌ Failed to load sessions: ${error}`;
       setDebugResult(message);
@@ -106,44 +104,40 @@ const StorageDebugger: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🔧 Storage Debugger</Text>
-      <Text style={styles.subtitle}>Use these buttons to debug storage issues</Text>
-      
+      <Text style={styles.subtitle}>
+        Use these buttons to debug storage issues
+      </Text>
+
       <View style={styles.buttonGrid}>
-        <Button 
-          title="Quick Debug" 
-          onPress={handleQuickDebug} 
+        <Button
+          title="Quick Debug"
+          onPress={handleQuickDebug}
           disabled={loading}
         />
-        <Button 
-          title="Inspect Storage" 
-          onPress={handleInspectStorage} 
+        <Button
+          title="Inspect Storage"
+          onPress={handleInspectStorage}
           disabled={loading}
         />
-        <Button 
-          title="Test Load" 
-          onPress={handleTestLoad} 
+        <Button title="Test Load" onPress={handleTestLoad} disabled={loading} />
+        <Button
+          title="Add Test Data"
+          onPress={handleAddTestSessions}
           disabled={loading}
         />
-        <Button 
-          title="Add Test Data" 
-          onPress={handleAddTestSessions} 
+        <Button
+          title="Clear All"
+          onPress={handleClearSessions}
           disabled={loading}
         />
-        <Button 
-          title="Clear All" 
-          onPress={handleClearSessions} 
-          disabled={loading}
-        />
-        <Button 
-          title="Complete Test" 
-          onPress={handleCompleteTest} 
+        <Button
+          title="Complete Test"
+          onPress={handleCompleteTest}
           disabled={loading}
         />
       </View>
 
-      {loading && (
-        <Text style={styles.loading}>⏳ Processing...</Text>
-      )}
+      {loading && <Text style={styles.loading}>⏳ Processing...</Text>}
 
       {debugResult && (
         <View style={styles.resultContainer}>

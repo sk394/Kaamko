@@ -1,21 +1,3 @@
-/**
- * Theme colors for the React Native Time Tracker app
- *
- * Based on Material Design 3 color system for consistent and accessible design.
- * These colors work in both app and test environments and provide good contrast
- * ratios for accessibility compliance.
- *
- * Color naming follows Material Design 3 conventions:
- * - primary: Main brand color used for key components
- * - primaryContainer: Lighter version of primary for backgrounds
- * - onSurface: High emphasis text on surface backgrounds
- * - onSurfaceVariant: Medium emphasis text
- * - outline: Borders and dividers
- * - error: Error states and destructive actions
- * - errorContainer: Error message backgrounds
- * - surface: Main background color
- * - surfaceVariant: Alternative background for cards/sections
- */
 export const AppColors = {
   /** Primary brand color - used for buttons, icons, and key UI elements */
   primary: '#6750A4',

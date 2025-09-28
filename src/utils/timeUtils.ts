@@ -3,17 +3,14 @@
  * @returns Object with start and end dates for this week
  */
 export const getThisWeekDateRange = (): { startDate: Date; endDate: Date } => {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
-  // Calculate Monday (if Sunday, go back 6 days)
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
-  const today = new Date(now);
-  today.setHours(23, 59, 59, 999);
-  return { startDate: monday, endDate: today };
+  const today = new Date();
+  const firstDayOfWeek = new Date(
+    today.setDate(today.getDate() - today.getDay())
+  ); // Sunday
+  const lastDayOfWeek = new Date(firstDayOfWeek);
+  lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6); // Saturday
+  return { startDate: firstDayOfWeek, endDate: lastDayOfWeek };
 };
-// Time calculation and formatting utilities
 
 /**
  * Calculate hours between two timestamps
@@ -47,7 +44,6 @@ export const formatTime = (timestamp: string): string => {
  * @returns Formatted date string (e.g., "Mon, Jan 1")
  */
 export const formatDate = (dateString: string): string => {
-
   return new Date(dateString).toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -57,24 +53,22 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
- * Get date range for last week filter (past 7 days)
- * @returns Object with start and end dates for the past 7 days
+ * Get date range for last week filter (previous calendar week Monday to Sunday)
+ * @returns Object with start and end dates for the previous calendar week
  */
 export const getLastWeekDateRange = (): { startDate: Date; endDate: Date } => {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
 
-  // Calculate last week's Monday
-  const lastMonday = new Date(now);
-  lastMonday.setDate(now.getDate() - ((dayOfWeek + 6) % 7) - 7);
-  lastMonday.setHours(0, 0, 0, 0);
+  // Calculate the previous week's Sunday (start of the range)
+  const lastSunday = new Date(now);
+  lastSunday.setDate(now.getDate() - dayOfWeek - 7);
 
-  // Calculate last week's Sunday
-  const lastSunday = new Date(lastMonday);
-  lastSunday.setDate(lastMonday.getDate() + 6);
-  lastSunday.setHours(23, 59, 59, 999);
+  // Calculate the previous week's Monday (end of the range)
+  const lastMonday = new Date(lastSunday);
+  lastMonday.setDate(lastSunday.getDate() + 6);
 
-  return { startDate: lastMonday, endDate: lastSunday };
+  return { startDate: lastSunday, endDate: lastMonday };
 };
 
 /**
@@ -110,9 +104,21 @@ export const isDateInRange = (
   const date = new Date(dateString);
 
   // Set time to start of day for consistent comparison
-  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const startOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const endOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const dateOnly = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  const startOnly = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+  const endOnly = new Date(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate()
+  );
 
   return dateOnly >= startOnly && dateOnly <= endOnly;
 };

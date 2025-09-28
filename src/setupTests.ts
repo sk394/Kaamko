@@ -1,9 +1,5 @@
-// Jest setup file for testing configuration
-// This file will be used to configure testing environment
-
 import '@testing-library/jest-native/extend-expect';
 
-// Mock react-native-paper components
 jest.mock('react-native-paper', () => {
   const React = require('react');
   const {

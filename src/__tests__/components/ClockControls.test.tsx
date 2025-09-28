@@ -2,7 +2,6 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ClockControls } from '../../components/ClockControls';
 
-
 describe('ClockControls Component', () => {
   const mockOnClockIn = jest.fn();
   const mockOnClockOut = jest.fn();

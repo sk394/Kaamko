@@ -227,6 +227,48 @@ export const loadStoredSessions = async (): Promise<SessionObject[]> => {
 };
 
 /**
+ * Delete a specific session by ID
+ * @param sessionId - ID of the session to delete
+ */
+export const deleteSession = async (sessionId: string): Promise<void> => {
+  try {
+    await retryOperation(
+      async () => {
+        // Load existing sessions safely
+        const existingSessions = await safeAsyncOperation(
+          async () => {
+            const sessionsData = await AsyncStorage.getItem(WORK_SESSIONS_KEY);
+            if (sessionsData) {
+              const parsedSessions = JSON.parse(sessionsData);
+              return validateSessionsArray(parsedSessions);
+            }
+            return [];
+          },
+          [],
+          'load existing sessions for delete'
+        );
+
+        // Filter out the session to delete
+        const updatedSessions = existingSessions.filter(
+          (session) => session.id !== sessionId
+        );
+
+        // Save the updated sessions array
+        await AsyncStorage.setItem(
+          WORK_SESSIONS_KEY,
+          JSON.stringify(updatedSessions)
+        );
+      },
+      2,
+      500
+    );
+  } catch (error) {
+    const appError = handleStorageError(error as Error, 'delete session');
+    throw new Error(appError.message);
+  }
+};
+
+/**
  * Get storage keys for testing purposes
  */
 export const getStorageKeys = () => ({

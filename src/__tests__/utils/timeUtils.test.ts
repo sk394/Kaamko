@@ -1,10 +1,10 @@
-import { 
-  calculateHours, 
-  formatTime, 
+import {
+  calculateHours,
+  formatTime,
   formatDate,
   getLastWeekDateRange,
   getLastMonthDateRange,
-  isDateInRange
+  isDateInRange,
 } from '../../utils/timeUtils';
 
 describe('timeUtils', () => {
@@ -83,7 +83,9 @@ describe('timeUtils', () => {
   describe('getLastWeekDateRange', () => {
     test('returns date range for past 7 days', () => {
       const { startDate, endDate } = getLastWeekDateRange();
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
       expect(daysDiff).toBe(7);
     });
 
@@ -104,7 +106,9 @@ describe('timeUtils', () => {
   describe('getLastMonthDateRange', () => {
     test('returns date range for past 30 days', () => {
       const { startDate, endDate } = getLastMonthDateRange();
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
       expect(daysDiff).toBe(30);
     });
 

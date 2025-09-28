@@ -1,8 +1,3 @@
-/**
- * Performance monitoring utilities for the Time Tracker app
- * Helps identify performance bottlenecks and memory usage issues
- */
-
 interface PerformanceMetrics {
   operation: string;
   startTime: number;

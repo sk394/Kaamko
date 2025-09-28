@@ -149,14 +149,14 @@ describe('Navigation Flow Integration Tests', () => {
       for (let i = 0; i < 5; i++) {
         // Navigate to sessions history
         fireEvent.press(getByText('View History'));
-        
+
         await waitFor(() => {
           expect(getByText('Sessions History')).toBeTruthy();
         });
 
         // Navigate back to main
         fireEvent.press(getByText('Back to Main'));
-        
+
         await waitFor(() => {
           expect(getByText('Time Tracker')).toBeTruthy();
         });
@@ -178,29 +178,29 @@ describe('Navigation Flow Integration Tests', () => {
 
       // Measure navigation to sessions history
       const startTime = performance.now();
-      
+
       fireEvent.press(getByText('View History'));
-      
+
       await waitFor(() => {
         expect(getByText('Sessions History')).toBeTruthy();
       });
-      
+
       const navigationTime = performance.now() - startTime;
-      
+
       // Navigation should complete within 1 second
       expect(navigationTime).toBeLessThan(1000);
 
       // Measure navigation back to main
       const backStartTime = performance.now();
-      
+
       fireEvent.press(getByText('Back to Main'));
-      
+
       await waitFor(() => {
         expect(getByText('Time Tracker')).toBeTruthy();
       });
-      
+
       const backNavigationTime = performance.now() - backStartTime;
-      
+
       // Back navigation should also complete within 1 second
       expect(backNavigationTime).toBeLessThan(1000);
     });
@@ -224,15 +224,15 @@ describe('Navigation Flow Integration Tests', () => {
 
       // Navigation should still work efficiently after loading
       const startTime = performance.now();
-      
+
       fireEvent.press(getByText('View History'));
-      
+
       await waitFor(() => {
         expect(getByText('Sessions History')).toBeTruthy();
       });
-      
+
       const navigationTime = performance.now() - startTime;
-      
+
       // Even with initial loading, navigation should be fast
       expect(navigationTime).toBeLessThan(500);
     });

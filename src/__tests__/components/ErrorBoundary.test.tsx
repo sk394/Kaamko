@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent} from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { Text } from 'react-native';
 
@@ -14,7 +14,7 @@ const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
 describe('ErrorBoundary', () => {
   beforeEach(() => {
     // Mock console.error to avoid noise in tests
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {

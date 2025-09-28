@@ -1,4 +1,6 @@
-# React Native Time Tracker
+# Kaamko App
+
+**Work Smarter, Track Better**
 
 A simple and elegant time tracking application built with React Native and Expo. Track your work sessions with clock-in/clock-out functionality and maintain a history of all your work sessions.
 
@@ -33,7 +35,7 @@ Before running this app, make sure you have:
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd react-native-time-tracker
+   cd kaamko-app
    ```
 
 2. **Install dependencies**
@@ -80,7 +82,7 @@ Before running this app, make sure you have:
 ## Project Structure
 
 ```
-react-native-time-tracker/
+kaamko-app/
 ├── App.tsx                 # Main app component
 ├── src/
 │   ├── components/         # React components
