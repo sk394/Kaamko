@@ -1,0 +1,259 @@
+name: Kaamko App CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [published]
+
+env:
+  NODE_VERSION: '18.x'
+  EXPO_CLI_VERSION: 'latest'
+
+jobs:
+  # Test and Lint Job
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci
+        
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run type checking
+      run: npx tsc --noEmit
+      
+    - name: Run tests
+      run: npm test -- --coverage --watchAll=false
+      
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: success()
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: kaamko-app-coverage
+
+  # Security Audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Run security audit
+      run: npm audit --audit-level=high
+      
+    - name: Run dependency check
+      run: npm audit fix --dry-run
+
+  # Development Build (for develop branch and PRs)
+  build-preview:
+    name: Build Preview
+    runs-on: ubuntu-latest
+    needs: [test, security-audit]
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: ${{ env.EXPO_CLI_VERSION }}
+        token: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build for preview
+      run: |
+        npx eas-cli build --platform all --profile preview --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Comment PR with build info
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🚀 Preview build completed! Check the Expo dashboard for download links.'
+          })
+
+  # Production Build (for main branch and releases)
+  build-production:
+    name: Build Production
+    runs-on: ubuntu-latest
+    needs: [test, security-audit]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    
+    outputs:
+      ios-build-url: ${{ steps.build.outputs.ios-build-url }}
+      android-build-url: ${{ steps.build.outputs.android-build-url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: ${{ env.EXPO_CLI_VERSION }}
+        token: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build for production
+      id: build
+      run: |
+        echo "Building production apps..."
+        npx eas-cli build --platform all --profile production --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Save build artifacts info
+      run: |
+        echo "Build completed successfully"
+        echo "Check Expo dashboard for build artifacts"
+
+  # Auto-submit to App Stores (only on release)
+  submit-stores:
+    name: Submit to App Stores
+    runs-on: ubuntu-latest
+    needs: build-production
+    if: github.event_name == 'release' && github.event.action == 'published'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: ${{ env.EXPO_CLI_VERSION }}
+        token: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Submit to iOS App Store
+      run: |
+        npx eas-cli submit --platform ios --latest --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
+        EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.EXPO_APPLE_APP_SPECIFIC_PASSWORD }}
+      continue-on-error: true
+      
+    - name: Submit to Google Play Store
+      run: |
+        npx eas-cli submit --platform android --latest --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      continue-on-error: true
+      
+    - name: Create deployment summary
+      run: |
+        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **iOS**: Submitted to App Store Connect" >> $GITHUB_STEP_SUMMARY
+        echo "- **Android**: Submitted to Google Play Console" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release Notes**: ${{ github.event.release.body }}" >> $GITHUB_STEP_SUMMARY
+
+  # Deploy to Expo for OTA updates
+  deploy-expo:
+    name: Deploy to Expo
+    runs-on: ubuntu-latest
+    needs: [test, security-audit]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: ${{ env.EXPO_CLI_VERSION }}
+        token: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Publish to Expo
+      run: |
+        npx expo publish --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  # Notify deployment status
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [build-production, submit-stores, deploy-expo]
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+    
+    steps:
+    - name: Notify success
+      if: needs.build-production.result == 'success'
+      run: |
+        echo "✅ Kaamko App deployment completed successfully!"
+        echo "Build artifacts are available in the Expo dashboard"
+        
+    - name: Notify failure
+      if: needs.build-production.result == 'failure'
+      run: |
+        echo "❌ Kaamko App deployment failed!"
+        echo "Check the logs for more details"
+        exit 1

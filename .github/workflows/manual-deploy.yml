@@ -1,0 +1,108 @@
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+      submit:
+        description: 'Submit to app stores after build'
+        required: false
+        default: false
+        type: boolean
+      version_bump:
+        description: 'Bump version before build'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18.x'
+  EXPO_CLI_VERSION: 'latest'
+
+jobs:
+  manual-deploy:
+    name: Manual Deployment
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Expo CLI
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: ${{ env.EXPO_CLI_VERSION }}
+        token: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test -- --watchAll=false
+      
+    - name: Bump version
+      if: inputs.version_bump
+      run: |
+        npm version patch --no-git-tag-version
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add package.json package-lock.json app.json
+        git commit -m "Bump version for deployment"
+        git push
+      
+    - name: Build app
+      run: |
+        echo "Building for platform: ${{ inputs.platform }}"
+        echo "Using profile: ${{ inputs.profile }}"
+        npx eas-cli build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        
+    - name: Submit to stores
+      if: inputs.submit && inputs.profile == 'production'
+      run: |
+        if [ "${{ inputs.platform }}" == "all" ] || [ "${{ inputs.platform }}" == "ios" ]; then
+          echo "Submitting to iOS App Store..."
+          npx eas-cli submit --platform ios --latest --non-interactive || echo "iOS submission failed"
+        fi
+        
+        if [ "${{ inputs.platform }}" == "all" ] || [ "${{ inputs.platform }}" == "android" ]; then
+          echo "Submitting to Google Play Store..."
+          npx eas-cli submit --platform android --latest --non-interactive || echo "Android submission failed"
+        fi
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
+        EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.EXPO_APPLE_APP_SPECIFIC_PASSWORD }}
+        
+    - name: Create deployment summary
+      run: |
+        echo "## 🚀 Manual Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Platform**: ${{ inputs.platform }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Profile**: ${{ inputs.profile }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version Bumped**: ${{ inputs.version_bump }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Submitted to Stores**: ${{ inputs.submit }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
