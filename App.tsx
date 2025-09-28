@@ -27,7 +27,7 @@ import {
   saveCurrentState,
   batchSaveClockOutData,
 } from './src/utils/storage';
-import { AppState, SessionObject, NavigationMethods } from './src/types';
+import { AppState, SessionObject} from './src/types';
 import { calculateHours } from './src/utils/timeUtils';
 import {
   SessionsProvider,

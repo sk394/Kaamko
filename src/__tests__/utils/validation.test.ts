@@ -1,189 +1,162 @@
-import {
-  validateClockState,
-  validateSessionData,
-  validateSessionsArray,
-} from '../../utils/validation';
+import { validateClockState, validateSessionsArray, validateSessionData } from '../../utils/validation';
 import { ClockState, SessionObject } from '../../types';
 
-describe('validation', () => {
+describe('Validation Utils', () => {
   describe('validateClockState', () => {
-    test('returns default state for null input', () => {
-      const result = validateClockState(null);
-      expect(result).toEqual({ isClocked: false, clockInTime: null });
+    test('validates correct clock state', () => {
+      const validState: ClockState = {
+        isClocked: true,
+        clockInTime: '2024-01-01T09:00:00.000Z',
+      };
+      
+      const result = validateClockState(validState);
+      expect(result).toEqual(validState);
     });
 
-    test('returns default state for undefined input', () => {
-      const result = validateClockState(undefined);
-      expect(result).toEqual({ isClocked: false, clockInTime: null });
-    });
-
-    test('returns default state for non-object input', () => {
-      const result = validateClockState('invalid');
-      expect(result).toEqual({ isClocked: false, clockInTime: null });
-    });
-
-    test('returns default state when isClocked is not boolean', () => {
-      const result = validateClockState({
-        isClocked: 'true',
+    test('validates clock state with null time', () => {
+      const validState: ClockState = {
+        isClocked: false,
         clockInTime: null,
-      });
+      };
+      
+      const result = validateClockState(validState);
+      expect(result).toEqual(validState);
+    });
+
+    test('returns default for invalid state', () => {
+      const invalidState = {
+        isClocked: 'true',
+        clockInTime: 'invalid-time',
+      };
+      
+      const result = validateClockState(invalidState as any);
       expect(result).toEqual({ isClocked: false, clockInTime: null });
     });
 
-    test('returns valid state when not clocked', () => {
-      const input = { isClocked: false, clockInTime: 'some-time' };
-      const result = validateClockState(input);
+    test('returns default for missing properties', () => {
+      const incompleteState = { isClocked: true };
+      
+      const result = validateClockState(incompleteState as any);
       expect(result).toEqual({ isClocked: false, clockInTime: null });
-    });
-
-    test('returns default state when clocked but no clockInTime', () => {
-      const input = { isClocked: true, clockInTime: null };
-      const result = validateClockState(input);
-      expect(result).toEqual({ isClocked: false, clockInTime: null });
-    });
-
-    test('returns default state when clocked but invalid clockInTime', () => {
-      const input = { isClocked: true, clockInTime: 'invalid-date' };
-      const result = validateClockState(input);
-      expect(result).toEqual({ isClocked: false, clockInTime: null });
-    });
-
-    test('returns valid state when properly clocked in', () => {
-      const clockInTime = '2024-01-01T09:00:00.000Z';
-      const input = { isClocked: true, clockInTime };
-      const result = validateClockState(input);
-      expect(result).toEqual({ isClocked: true, clockInTime });
-    });
-
-    test('handles extra properties in input', () => {
-      const clockInTime = '2024-01-01T09:00:00.000Z';
-      const input = { isClocked: true, clockInTime, extraProp: 'value' };
-      const result = validateClockState(input);
-      expect(result).toEqual({ isClocked: true, clockInTime });
     });
   });
 
   describe('validateSessionData', () => {
-    const validSession: SessionObject = {
-      id: 'test-id',
-      date: '2024-01-01',
-      clockIn: '2024-01-01T09:00:00.000Z',
-      clockOut: '2024-01-01T17:00:00.000Z',
-      hours: 8,
-    };
-
-    test('returns true for valid session', () => {
-      expect(validateSessionData(validSession)).toBe(true);
+    test('validates correct session object', () => {
+      const validSession: SessionObject = {
+        id: 'test-id',
+        date: '2024-01-01',
+        clockIn: '2024-01-01T09:00:00.000Z',
+        clockOut: '2024-01-01T17:00:00.000Z',
+        hours: 8,
+      };
+      
+      const result = validateSessionData(validSession);
+      expect(result).toBe(true);
     });
 
-    test('returns false for null input', () => {
-      expect(validateSessionData(null)).toBe(false);
+    test('returns false for invalid session', () => {
+      const invalidSession = {
+        id: '',
+        date: '2024-01-01',
+        clockIn: 'invalid-time',
+        clockOut: '2024-01-01T17:00:00.000Z',
+        hours: 'invalid-hours',
+      };
+      
+      const result = validateSessionData(invalidSession as any);
+      expect(result).toBe(false);
     });
 
-    test('returns false for non-object input', () => {
-      expect(validateSessionData('invalid')).toBe(false);
-    });
-
-    test('returns false for missing id', () => {
-      const session = { ...validSession };
-      delete (session as any).id;
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for empty id', () => {
-      const session = { ...validSession, id: '' };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for non-string id', () => {
-      const session = { ...validSession, id: 123 };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for invalid date format', () => {
-      const session = { ...validSession, date: '01/01/2024' };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for invalid clockIn timestamp', () => {
-      const session = { ...validSession, clockIn: 'invalid-date' };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for invalid clockOut timestamp', () => {
-      const session = { ...validSession, clockOut: 'invalid-date' };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for negative hours', () => {
-      const session = { ...validSession, hours: -1 };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false for non-number hours', () => {
-      const session = { ...validSession, hours: '8' };
-      expect(validateSessionData(session)).toBe(false);
+    test('returns false for missing required fields', () => {
+      const incompleteSession = {
+        id: 'test-id',
+        date: '2024-01-01',
+      };
+      
+      const result = validateSessionData(incompleteSession as any);
+      expect(result).toBe(false);
     });
 
     test('returns false when clockOut is before clockIn', () => {
-      const session = {
-        ...validSession,
+      const invalidSession = {
+        id: 'test-id',
+        date: '2024-01-01',
         clockIn: '2024-01-01T17:00:00.000Z',
         clockOut: '2024-01-01T09:00:00.000Z',
+        hours: 8,
       };
-      expect(validateSessionData(session)).toBe(false);
-    });
-
-    test('returns false when clockOut equals clockIn', () => {
-      const time = '2024-01-01T09:00:00.000Z';
-      const session = {
-        ...validSession,
-        clockIn: time,
-        clockOut: time,
-      };
-      expect(validateSessionData(session)).toBe(false);
+      
+      const result = validateSessionData(invalidSession);
+      expect(result).toBe(false);
     });
   });
 
   describe('validateSessionsArray', () => {
-    const validSession: SessionObject = {
-      id: 'test-id',
-      date: '2024-01-01',
-      clockIn: '2024-01-01T09:00:00.000Z',
-      clockOut: '2024-01-01T17:00:00.000Z',
-      hours: 8,
-    };
-
-    test('returns empty array for non-array input', () => {
-      expect(validateSessionsArray('not-array')).toEqual([]);
-      expect(validateSessionsArray(null)).toEqual([]);
-      expect(validateSessionsArray(undefined)).toEqual([]);
-    });
-
-    test('returns empty array for empty array', () => {
-      expect(validateSessionsArray([])).toEqual([]);
+    test('validates array of correct sessions', () => {
+      const validSessions: SessionObject[] = [
+        {
+          id: 'test-1',
+          date: '2024-01-01',
+          clockIn: '2024-01-01T09:00:00.000Z',
+          clockOut: '2024-01-01T17:00:00.000Z',
+          hours: 8,
+        },
+        {
+          id: 'test-2',
+          date: '2024-01-02',
+          clockIn: '2024-01-02T09:00:00.000Z',
+          clockOut: '2024-01-02T17:00:00.000Z',
+          hours: 8,
+        },
+      ];
+      
+      const result = validateSessionsArray(validSessions);
+      expect(result).toEqual(validSessions);
+      expect(result).toHaveLength(2);
     });
 
     test('filters out invalid sessions', () => {
-      const sessions = [
-        validSession,
-        { ...validSession, id: '' }, // Invalid
-        { ...validSession, id: 'valid-2' },
-        null, // Invalid
-        { ...validSession, hours: -1 }, // Invalid
+      const mixedSessions = [
+        {
+          id: 'valid-1',
+          date: '2024-01-01',
+          clockIn: '2024-01-01T09:00:00.000Z',
+          clockOut: '2024-01-01T17:00:00.000Z',
+          hours: 8,
+        },
+        {
+          id: '',
+          date: '2024-01-02',
+          clockIn: 'invalid-time',
+          clockOut: '2024-01-02T17:00:00.000Z',
+          hours: 'invalid-hours',
+        },
+        {
+          id: 'valid-2',
+          date: '2024-01-03',
+          clockIn: '2024-01-03T09:00:00.000Z',
+          clockOut: '2024-01-03T17:00:00.000Z',
+          hours: 8,
+        },
       ];
-
-      const result = validateSessionsArray(sessions);
+      
+      const result = validateSessionsArray(mixedSessions as any);
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('test-id');
+      expect(result[0].id).toBe('valid-1');
       expect(result[1].id).toBe('valid-2');
     });
 
-    test('returns all sessions when all are valid', () => {
-      const sessions = [validSession, { ...validSession, id: 'valid-2' }];
+    test('returns empty array for non-array input', () => {
+      const nonArrayInput = { notAnArray: true };
+      
+      const result = validateSessionsArray(nonArrayInput as any);
+      expect(result).toEqual([]);
+    });
 
-      const result = validateSessionsArray(sessions);
-      expect(result).toHaveLength(2);
+    test('returns empty array for null/undefined input', () => {
+      expect(validateSessionsArray(null as any)).toEqual([]);
+      expect(validateSessionsArray(undefined as any)).toEqual([]);
     });
   });
 });

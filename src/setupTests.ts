@@ -1,5 +1,25 @@
 import '@testing-library/jest-native/extend-expect';
 
+// Mock expo-font
+jest.mock('expo-font', () => ({
+  loadAsync: jest.fn(),
+  isLoaded: jest.fn(() => true),
+}));
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    Ionicons: ({ name, size, color, style }: any) =>
+      React.createElement(View, {
+        style: [{ width: size, height: size, backgroundColor: color }, style],
+        testID: `icon-${name}`,
+      }),
+  };
+});
+
 jest.mock('react-native-paper', () => {
   const React = require('react');
   const {
@@ -11,7 +31,7 @@ jest.mock('react-native-paper', () => {
 
   const Card = ({ children, style }: any) =>
     React.createElement(View, { style }, children);
-  Card.Content = ({ children }: any) => React.createElement(View, {}, children);
+    Card.Content = function CardContent({ children }: any) { return React.createElement(View, {}, children); };
 
   const Button = ({
     children,
