@@ -33,8 +33,7 @@ on:
         type: boolean
 
 env:
-  NODE_VERSION: '18.x'
-  EXPO_CLI_VERSION: 'latest'
+  NODE_VERSION: '20.x'
 
 jobs:
   manual-deploy:
@@ -51,11 +50,8 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         
-    - name: Setup Expo CLI
-      uses: expo/expo-github-action@v8
-      with:
-        expo-version: ${{ env.EXPO_CLI_VERSION }}
-        token: ${{ secrets.EXPO_TOKEN }}
+    - name: Setup EAS CLI
+      run: npm install -g @expo/eas-cli
         
     - name: Install dependencies
       run: npm ci
@@ -77,7 +73,7 @@ jobs:
       run: |
         echo "Building for platform: ${{ inputs.platform }}"
         echo "Using profile: ${{ inputs.profile }}"
-        npx eas-cli build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
+        eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         
@@ -86,12 +82,12 @@ jobs:
       run: |
         if [ "${{ inputs.platform }}" == "all" ] || [ "${{ inputs.platform }}" == "ios" ]; then
           echo "Submitting to iOS App Store..."
-          npx eas-cli submit --platform ios --latest --non-interactive || echo "iOS submission failed"
+          eas submit --platform ios --latest --non-interactive || echo "iOS submission failed"
         fi
         
         if [ "${{ inputs.platform }}" == "all" ] || [ "${{ inputs.platform }}" == "android" ]; then
           echo "Submitting to Google Play Store..."
-          npx eas-cli submit --platform android --latest --non-interactive || echo "Android submission failed"
+          eas submit --platform android --latest --non-interactive || echo "Android submission failed"
         fi
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

@@ -552,9 +552,9 @@ function AppContent() {
                   You have been working since{' '}
                   {state.clockInTime
                     ? new Date(state.clockInTime).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
                     : ''}
                 </Text>
                 <View style={styles.swipeDownWrapper}>

@@ -84,11 +84,14 @@ You need to configure the following secrets in your GitHub repository:
 ## 📋 Setup Checklist
 
 ### Prerequisites:
+- [ ] Node.js 20.x or higher installed locally
 - [ ] Expo account created
 - [ ] EAS CLI installed locally: `npm install -g @expo/eas-cli`
 - [ ] Project configured for EAS: `eas build:configure`
 - [ ] Apple Developer account (for iOS)
 - [ ] Google Play Developer account (for Android)
+
+**Note**: The global `expo-cli` has been deprecated. Use `npx expo` for Expo CLI commands and `eas` for builds/submissions.
 
 ### GitHub Repository Setup:
 - [ ] Add all required secrets (at minimum `EXPO_TOKEN`)

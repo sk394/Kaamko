@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
 
 jobs:
   quality-checks:
@@ -16,7 +16,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: ['16.x', '18.x', '20.x']
+        node-version: ['18.x', '20.x', '22.x']
     
     steps:
     - name: Checkout code
@@ -162,11 +162,8 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         
-    - name: Setup Expo CLI
-      uses: expo/expo-github-action@v8
-      with:
-        expo-version: latest
-        token: ${{ secrets.EXPO_TOKEN }}
+    - name: Setup EAS CLI
+      run: npm install -g @expo/eas-cli
         
     - name: Install dependencies
       run: npm ci
@@ -175,7 +172,7 @@ jobs:
       run: npx expo config --type prebuild
       
     - name: Export web build
-      run: npx expo export:web
+      run: npx expo export --platform web
       
     - name: Check bundle size
       run: |

@@ -46,13 +46,13 @@ time tracker, work timer, productivity, freelance, billing, hours tracking, time
 
 ### Development Build
 ```bash
-npx expo install
+npm install
 npx expo start
 ```
 
 ### Production Build (EAS)
 ```bash
-# Install EAS CLI
+# Install EAS CLI (if not already installed)
 npm install -g @expo/eas-cli
 
 # Login to Expo
@@ -70,6 +70,8 @@ eas build --platform android --profile production
 # Build for both platforms
 eas build --platform all --profile production
 ```
+
+**Note**: The global `expo-cli` has been deprecated. Use `npx expo` for development and `eas` for builds.
 
 ### Submit to App Stores
 ```bash
