@@ -33,7 +33,7 @@ on:
         type: boolean
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   EXPO_CLI_VERSION: 'latest'
 
 jobs:
